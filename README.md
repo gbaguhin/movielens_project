@@ -1,2 +1,2 @@
-# project-01
-my first git project
+# movielens-project
+Harvard Data Science Capstone final project
