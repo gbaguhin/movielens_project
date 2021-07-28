@@ -1,0 +1,111 @@
+---
+title: "Choose Your Own Project"
+author: "Greg Baguhin"
+date: "28/07/2021"
+output: pdf_document
+---
+#### INTRODUCTION
+
+This project attempts to fit a linear & logistical regression model to a clothes size dataset. It will try to correlate the effectiveness of the predictors in giving accurate predictions for cloth size.
+
+##### OBJECTIVE: 
+
+I will be using the cloth_size dataset downloaded from Kaggle to identify the most significant predictor that would produce the most accurate cloth size for a given variable.
+
+
+#### DATA PREPARATION
+
+Splitting the dataset into training and testing sets at a 50-50 ratio. This was chosen due to the relatively small amount of data used so the test set can be just as random as the training set.
+
+```{r message=FALSE,warning=FALSE}
+#install.packages("tidyverse")
+library(tidyverse)
+#install.packages("tidyr")
+library(tidyr)
+#install.packages("caret")
+library(caret)
+
+
+#Data Preparation:
+# Loading the csv file into RStudio
+url <- "D:/Desktop/Harvard Online/Data Science/Capstone/archive/cloth_size.csv"
+clothsize_data <- read_csv(url)
+
+# View first 6 rows
+head(clothsize_data)
+
+# inspect data properties
+str(clothsize_data)
+
+# inspect data for statistics
+summary(clothsize_data)
+
+# Find out how many rows with NAs
+sum(is.na(clothsize_data))
+
+# converting size to a factor
+clothsize_data <- clothsize_data %>% mutate(size=as_factor(size))
+
+# define the outcome and predictors
+y <- clothsize_data$size
+a <- clothsize_data$age
+b <- clothsize_data$weight
+c <- clothsize_data$height
+
+
+# generate training and test sets
+set.seed(1, sample.kind = "Rounding") # if using R 3.5 or earlier, remove the sample.kind argument
+test_index <- createDataPartition(y, times = 1, p = 0.5, list = FALSE)
+test_set <- clothsize_data[test_index, ]
+train_set <- clothsize_data[-test_index, ]
+```
+
+##### LINEAR REGRESSION MODEL
+
+Let's look at the predictor averages for each size
+
+```{r warning=FALSE}
+clothsize_data %>% group_by(size) %>%
+  summarise(avg_wt = mean(weight), avg_ht = mean(height), avg_age = mean(age))
+```
+
+
+Plotting probability of a size "M" vs weight
+```{r message=FALSE, warning=FALSE}
+clothsize_data %>%
+  mutate(x = round(weight)) %>%
+  group_by(x) %>%
+  filter(n() >= 10) %>%
+  summarize(prop = mean(size == "M")) %>%
+  ggplot(aes(x, prop)) +
+  geom_point()
+```
+
+We see that a person who is 58kgs has a 50% probability of wearing a size "M"
+
+```{r message=FALSE, warning=FALSE}
+train_set %>%
+  filter(round(weight)==58) %>%
+  summarize(y_hat = mean(size=="M"))
+```
+
+
+##### LOGICTIS REGRESSION MODEL
+
+Fit logistic regression model using weight as a predictor for size M, the size with
+the highest frequency in the dataset.
+
+```{r message=FALSE, warning=FALSE}
+glm_fit <- train_set %>% 
+  mutate(y = as.numeric(weight==58)) %>%
+  glm(y ~ size, data=., family = "binomial")
+
+p_hat_logit <- predict(glm_fit, newdata = test_set, type = "response")
+
+
+```
+
+#### CONCLUSION:
+
+We were able to show that we can use linear & logistic regression to model predictions for cloth size using the dataset. A more thorough testing algorithm could be built in future projects applying the same principles learned from this project.
+
